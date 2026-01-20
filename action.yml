@@ -1,0 +1,69 @@
+name: SSH
+description: Execute remote SSH commands
+
+inputs:
+  host:
+    description: SSH hostname or IP address to connect
+    required: true
+  port:
+    description: SSH port number
+    default: "22"
+  user:
+    description: SSH username for authentication on the remote server
+    required: true
+  key:
+    description: SSH private key content in PEM format
+    required: true
+  known_hosts:
+    description: Content of known_hosts file containing SSH public keys or CA for the host to connect
+    required: true
+  script:
+    description: Commands to execute on the remote server
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup SSH known hosts
+      run: |
+        umask 077
+        TMP=$(mktemp -p "$RUNNER_TEMP")
+        echo "$KNOWN_HOSTS" > "$TMP"
+        echo "KNOWN_HOSTS_FILE=$TMP" >> "$GITHUB_ENV"
+      shell: bash
+      env:
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
+
+    - name: Add private key to SSH agent
+      run: |
+        eval $(ssh-agent -s)
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+        echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+        ssh-add - <<< "$KEY"
+      shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+
+    - name: Run script on remote host
+      run: |
+        ssh -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
+          -p "$REMOTE_PORT" \
+          "$REMOTE_USER@$REMOTE_HOST" \
+          'bash -euo pipefail -s' <<< "$SCRIPT"
+      shell: bash
+      env:
+        REMOTE_HOST: ${{ inputs.host }}
+        REMOTE_PORT: ${{ inputs.port }}
+        REMOTE_USER: ${{ inputs.user }}
+        SCRIPT: ${{ inputs.script }}
+
+    - name: Kill SSH agent and clean up
+      if: ${{ always() }}
+      run: |
+        eval $(ssh-agent -k)
+        rm -f "$KNOWN_HOSTS_FILE"
+      shell: bash
+
+branding:
+  icon: terminal
+  color: gray-dark
