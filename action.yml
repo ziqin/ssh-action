@@ -26,6 +26,7 @@ runs:
   steps:
     - name: Setup SSH known hosts
       run: |
+        # Setup SSH known hosts
         umask 077
         TMP=$(mktemp -p "$RUNNER_TEMP")
         echo "$KNOWN_HOSTS" > "$TMP"
@@ -36,6 +37,7 @@ runs:
 
     - name: Add private key to SSH agent
       run: |
+        # Add private key to SSH agent
         eval $(ssh-agent -s)
         echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
         echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
@@ -46,6 +48,7 @@ runs:
 
     - name: Run script on remote host
       run: |
+        # Run script on remote host
         ssh -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
           -p "$REMOTE_PORT" \
           "$REMOTE_USER@$REMOTE_HOST" \
@@ -60,7 +63,10 @@ runs:
     - name: Kill SSH agent and clean up
       if: ${{ always() }}
       run: |
-        eval $(ssh-agent -k)
+        # Kill SSH agent and clean up
+        if [ -n "${SSH_AGENT_PID:-}" ]; then
+          eval $(ssh-agent -k)
+        fi
         rm -f "$KNOWN_HOSTS_FILE"
       shell: bash
 
