@@ -24,17 +24,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Setup SSH known hosts
-      run: |
-        # Setup SSH known hosts
-        umask 077
-        TMP=$(mktemp -p "$RUNNER_TEMP")
-        echo "$KNOWN_HOSTS" > "$TMP"
-        echo "KNOWN_HOSTS_FILE=$TMP" >> "$GITHUB_ENV"
-      shell: bash
-      env:
-        KNOWN_HOSTS: ${{ inputs.known_hosts }}
-
     - name: Add private key to SSH agent
       run: |
         # Add private key to SSH agent
@@ -49,12 +38,13 @@ runs:
     - name: Run script on remote host
       run: |
         # Run script on remote host
-        ssh -o UserKnownHostsFile="$KNOWN_HOSTS_FILE" \
+        ssh -o KnownHostsCommand='/usr/bin/printenv KNOWN_HOSTS' \
           -p "$REMOTE_PORT" \
           "$REMOTE_USER@$REMOTE_HOST" \
           'bash -euo pipefail -s' <<< "$SCRIPT"
       shell: bash
       env:
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
         REMOTE_HOST: ${{ inputs.host }}
         REMOTE_PORT: ${{ inputs.port }}
         REMOTE_USER: ${{ inputs.user }}
@@ -67,7 +57,6 @@ runs:
         if [ -n "${SSH_AGENT_PID:-}" ]; then
           eval $(ssh-agent -k)
         fi
-        rm -f "$KNOWN_HOSTS_FILE"
       shell: bash
 
 branding:
