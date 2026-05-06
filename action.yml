@@ -50,13 +50,11 @@ runs:
         REMOTE_USER: ${{ inputs.user }}
         SCRIPT: ${{ inputs.script }}
 
-    - name: Kill SSH agent and clean up
+    - name: Kill SSH agent
       if: ${{ always() }}
       run: |
-        # Kill SSH agent and clean up
-        if [ -n "${SSH_AGENT_PID:-}" ]; then
-          eval $(ssh-agent -k)
-        fi
+        # Kill SSH agent
+        [ -n "${SSH_AGENT_PID:-}" ] && eval $(ssh-agent -k)
       shell: bash
 
 branding:
