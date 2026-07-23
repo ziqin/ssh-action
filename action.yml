@@ -26,7 +26,6 @@ runs:
   steps:
     - name: Add private key to SSH agent
       run: |
-        # Add private key to SSH agent
         eval $(ssh-agent -s)
         echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
         echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
@@ -37,7 +36,6 @@ runs:
 
     - name: Run script on remote host
       run: |
-        # Run script on remote host
         ssh -o KnownHostsCommand='/usr/bin/printenv KNOWN_HOSTS' \
           -p "$REMOTE_PORT" \
           "$REMOTE_USER@$REMOTE_HOST" \
@@ -53,7 +51,6 @@ runs:
     - name: Kill SSH agent
       if: ${{ always() }}
       run: |
-        # Kill SSH agent
         [ -n "${SSH_AGENT_PID:-}" ] && eval $(ssh-agent -k)
       shell: bash
 
