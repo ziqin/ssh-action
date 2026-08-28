@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Execute remote commands
-        uses: ziqin/ssh-action@v0.1.1
+        uses: ziqin/ssh-action@v0.1.4
         with:
           host: 'your-server.example.com'
           user: 'deploy'
@@ -29,7 +29,7 @@ jobs:
           script: |
             cd /opt/myapp
             docker compose pull
-            docker compose up -d
+            docker compose restart
 ```
 
 ## Inputs
